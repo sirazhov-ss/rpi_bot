@@ -1,4 +1,6 @@
 import abc
+from typing import Union
+
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 from ssh_pymongo import MongoSession
@@ -42,12 +44,15 @@ class PGConnect(IConnect):
     def __get_stock(self, table: list, room: list):
         data = []
         for i in range(len(table)):
+            floor = None
             title = None
             for j in range(len(room)):
                 if table[i].get('rp_id') == room[j].get('rp_id'):
+                    floor = room[j].get('floor', None)
                     title = room[j].get('title', 'unknown')
                     break
             data.append({
+                'floor': floor,
                 'title': title,
                 'rp_id': table[i].get('rp_id'),
                 'rp_ip': table[i].get('rp_ip', None),
@@ -92,18 +97,16 @@ class MongoConnect(IConnect):
         room = list()
         floor = None
         for document in collection:
-            floor = document.get('floor')
+            floor = document.get('floor', None)
+            if floor is not None:
+                floor = int(floor)
             rooms = document.get('rooms')
             for i in range(len(rooms)):
-                value = {
+                room.append({
                     'rp_id': rooms[i].get('rpId'),
-                    'title': rooms[i].get('title'),
+                    'title': rooms[i].get('title', 'unknown'),
                     'floor': floor
-                    }
-                room.append(value)
-                value = {}
-            floor = None
-            rooms = None
+                    })
         return room
 
     def __get_stock(self, collection: dict, room: list):
@@ -113,9 +116,12 @@ class MongoConnect(IConnect):
             title = None
             for note in range(len(room)):
                 if document.get('rpId') == room[note].get('rp_id'):
-                    title = room[note].get('title', 'unknown')
                     floor = room[note].get('floor', None)
+                    title = room[note].get('title', 'unknown')
                     break
+                else:
+                    floor = 'unknown'
+                    title = 'unknown'
             data.append({
                 'floor': floor,
                 'title': title,
@@ -173,7 +179,7 @@ class CheckRpi:
         else:
             minute -= 2
 
-        date_range = [datetime(year, month, day, hour, minute), datetime(last_year, last_month, last_day, hour, minute)]
+        date_range = [datetime(year, month, day, hour, minute), datetime(last_year, last_month, last_day, 0, 0)]
         return date_range
 
     def __format_date(self, x):
@@ -188,13 +194,29 @@ class CheckRpi:
             ending_array = ["о", "их", "ей"]
         return ending_array
 
+    def __str_to_digit(self, var):
+        if not isinstance(var, str) or not var.isdigit():
+            return var
+        else:
+            digit = int(var.replace('.', ''))
+            return digit
+
+    def __sort_list(self, lst:list, key1='', key2='') -> list:
+        for cnt in range(len(lst)-1, 0, -1):
+            for i in range(cnt):
+                if self.__str_to_digit(lst[i].get(key1, 0)) > self.__str_to_digit(lst[i + 1].get(key1, 0)) \
+                        and self.__str_to_digit(lst[i].get(key2, 0)) > self.__str_to_digit(lst[i + 1].get(key2, 0)):
+                    lst[i], lst[i + 1] = lst[i + 1], lst[i]
+        return lst
+
+
     def get_weak(self) -> list:
         weak = list()
         date_range = self.__check_date()
-#        print(f"date_range[0] = {date_range[0]} date_range[1] = {date_range[1]}")
         for i in range(len(self.__data)):
             if date_range[0] >= self.__data[i].get('date_income') > date_range[1]:
                 weak.append(self.__data[i])
+        weak = self.__sort_list(weak, 'date_income')
         return weak
 
     def get_message(self, subscribe=None):
@@ -215,6 +237,7 @@ class CheckRpi:
                 message = ""
                 for j in range(count):
                     message += f"{i * count + j + 1})    title: {array[i * count + j].get('title')}\n\r        \
+                    floor: {array[i * count + j].get('floor')}\n\r        \
                     rp_id: {array[i * count + j].get('rp_id')}\n\r        \
                     rp_ip: {array[i * count + j].get('rp_ip')}\n\r        \
                     switch: {array[i * count + j].get('switch')}\n\r        \
@@ -223,10 +246,11 @@ class CheckRpi:
                 message_array.append(message)
             message = ""
             for i in range(remainder):
-                message += f"{whole * count + i + 1})    title: {array[whole * count + i].get('title')}\n\r       \
+                message += f"{whole * count + i + 1})    title: {array[whole * count + i].get('title')}\n\r        \
+                    floor: {array[whole * count + i].get('floor')}\n\r        \
                     rp_id: {array[whole * count + i].get('rp_id')}\n\r        \
                     rp_ip: {array[whole * count + i].get('rp_ip')}\n\r        \
-                    switch: {array[whole * count + i].get('switch')}\n\r       \
+                    switch: {array[whole * count + i].get('switch')}\n\r        \
                     port: {array[whole * count + i].get('port')}\n\r        \
                     date_income: {self.__format_date(array[whole * count + i].get('date_income'))}\
                     \n\r\n\r"
@@ -251,8 +275,7 @@ if __name__ == '__main__':
     #           'db_password': 'so_niac'
     #           }
     # data = PGConnect(**params).data
-    # for document in data:
-    #     print(document)
+
 
 
     params = {'remote_host': '213.171.42.84',
@@ -266,6 +289,10 @@ if __name__ == '__main__':
               'db_password': 'reloc'
               }
     data = MongoConnect(**params).data
-    for i in data:
+
+
+    weak = CheckRpi(data).weak
+
+    for i in weak:
         print(i)
 

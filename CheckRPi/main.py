@@ -12,7 +12,6 @@ class IConnect(abc.ABC):
         '''Возвращает список всех пих'''
         pass
 
-
 class PGConnect(IConnect):
     def __init__(self, **params):
         self.__template = ('remote_host', 'remote_port', 'remote_username', 'remote_password',
@@ -78,6 +77,7 @@ class PGConnect(IConnect):
         server.stop()
         return data
 
+
 class MongoConnect(IConnect):
     def __init__(self, **params):
         self.__template = ('remote_host', 'remote_port', 'remote_username', 'remote_password',
@@ -87,6 +87,45 @@ class MongoConnect(IConnect):
                 raise Exception(f"Connection failed! Missing parameter: '{key}'")
         self.__params = params
         self.data = self.get_data()
+
+    def __get_room(self, collection:dict) -> list:
+        room = list()
+        floor = None
+        for document in collection:
+            floor = document.get('floor')
+            rooms = document.get('rooms')
+            for i in range(len(rooms)):
+                value = {
+                    'rp_id': rooms[i].get('rpId'),
+                    'title': rooms[i].get('title'),
+                    'floor': floor
+                    }
+                room.append(value)
+                value = {}
+            floor = None
+            rooms = None
+        return room
+
+    def __get_stock(self, collection: dict, room: list):
+        data = []
+        for document in collection:
+            floor = None
+            title = None
+            for note in range(len(room)):
+                if document.get('rpId') == room[note].get('rp_id'):
+                    title = room[note].get('title', 'unknown')
+                    floor = room[note].get('floor', None)
+                    break
+            data.append({
+                'floor': floor,
+                'title': title,
+                "rp_id": document.get('rpId'),
+                "rp_ip": document.get('rpIp', None),
+                "switch": document.get('switch', None),
+                "port": document.get('port', None),
+                "date_income": document.get('dateIncome', None)
+                })
+        return data
 
     def get_data(self) -> list:
         session = MongoSession(
@@ -98,18 +137,10 @@ class MongoConnect(IConnect):
                 f"{self.__params.get('db_host')}:{self.__params.get('db_port')}/")
 
         db=session.connection[self.__params.get('db_name')]
+        collection = db.sysRoomsInfo.find({})
+        room = self.__get_room(collection)
         collection = db.sysConfig.find({})
-        data = []
-        for document in collection:
-            value = {
-                "rpId": document.get('rpId'),
-                "rpIp": document.get('rpIp'),
-                "switch": document.get('switch'),
-                "port": document.get('port'),
-                "dateIncome": document.get('dateIncome')
-            }
-            data.append(value)
-            value = {}
+        data = self.__get_stock(collection, room)
         session.stop()
         return data
 
@@ -220,8 +251,8 @@ if __name__ == '__main__':
     #           'db_password': 'so_niac'
     #           }
     # data = PGConnect(**params).data
-    # rpi = CheckRpi(data)
-    # print(rpi.message)
+    # for document in data:
+    #     print(document)
 
 
     params = {'remote_host': '213.171.42.84',
@@ -235,5 +266,6 @@ if __name__ == '__main__':
               'db_password': 'reloc'
               }
     data = MongoConnect(**params).data
-    print(data)
+    for i in data:
+        print(i)
 

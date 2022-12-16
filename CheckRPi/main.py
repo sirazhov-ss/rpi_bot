@@ -1,5 +1,4 @@
 import abc
-from typing import Union
 
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
@@ -204,9 +203,15 @@ class CheckRpi:
     def __sort_list(self, lst:list, key1='', key2='') -> list:
         for cnt in range(len(lst)-1, 0, -1):
             for i in range(cnt):
-                if self.__str_to_digit(lst[i].get(key1, 0)) > self.__str_to_digit(lst[i + 1].get(key1, 0)) \
-                        and self.__str_to_digit(lst[i].get(key2, 0)) > self.__str_to_digit(lst[i + 1].get(key2, 0)):
+                current_element1 = self.__str_to_digit(lst[i].get(key1, 0))
+                previous_element1 = self.__str_to_digit(lst[i + 1].get(key1, 0))
+                current_element2 = self.__str_to_digit(lst[i].get(key2, 0))
+                previous_element2 = self.__str_to_digit(lst[i + 1].get(key2, 0))
+                if current_element1 > previous_element1:
                     lst[i], lst[i + 1] = lst[i + 1], lst[i]
+                elif (current_element1 == previous_element1) and (current_element2 > previous_element2):
+                    lst[i], lst[i + 1] = lst[i + 1], lst[i]
+
         return lst
 
 
@@ -216,7 +221,7 @@ class CheckRpi:
         for i in range(len(self.__data)):
             if date_range[0] >= self.__data[i].get('date_income') > date_range[1]:
                 weak.append(self.__data[i])
-        weak = self.__sort_list(weak, 'date_income')
+        weak = self.__sort_list(weak, 'switch', 'port')
         return weak
 
     def get_message(self, subscribe=None):
@@ -264,35 +269,5 @@ class CheckRpi:
 
 
 if __name__ == '__main__':
-    # params = {'remote_host': '62.117.119.50',
-    #           'remote_port': 5434,
-    #           'remote_username': 'root',
-    #           'remote_password': 'Ehcbgflvy44',
-    #           'db_host': '192.168.10.9',
-    #           'db_port': 5432,
-    #           'db_name': 'so_niac',
-    #           'db_username': 'so_niac',
-    #           'db_password': 'so_niac'
-    #           }
-    # data = PGConnect(**params).data
-
-
-
-    params = {'remote_host': '213.171.42.84',
-              'remote_port': 3122,
-              'remote_username': 'ursadmin',
-              'remote_password': 'Ehcbgflvy44',
-              'db_host': '192.168.0.11',
-              'db_port': 27017,
-              'db_name': 'reloc',
-              'db_username': 'reloc',
-              'db_password': 'reloc'
-              }
-    data = MongoConnect(**params).data
-
-
-    weak = CheckRpi(data).weak
-
-    for i in weak:
-        print(i)
+    pass
 

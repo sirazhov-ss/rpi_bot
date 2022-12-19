@@ -242,24 +242,23 @@ class CheckRpi:
             for i in range(whole):
                 message = ""
                 for j in range(count):
-                    message += f"{i * count + j + 1})    title: {array[i * count + j].get('title')}\n\r        \
-                    floor: {array[i * count + j].get('floor')}\n\r        \
-                    rp_id: {array[i * count + j].get('rp_id')}\n\r        \
-                    rp_ip: {array[i * count + j].get('rp_ip')}\n\r        \
-                    switch: {array[i * count + j].get('switch')}\n\r        \
-                    port: {array[i * count + j].get('port')}\n\r        \
-                    date_income: {self.__format_date(array[i * count + j].get('date_income'))}\n\r\n\r"
+                    message += f"{i * count + j + 1})    title: {array[i * count + j].get('title')}\n\r\
+        floor: {array[i * count + j].get('floor')}\n\r\
+        rp_id: {array[i * count + j].get('rp_id')}\n\r\
+        rp_ip: {array[i * count + j].get('rp_ip')}\n\r\
+        switch: {array[i * count + j].get('switch')}\n\r\
+        port: {array[i * count + j].get('port')}\n\r\
+        date_income: {self.__format_date(array[i * count + j].get('date_income'))}\n\r\n\r"
                 message_array.append(message)
             message = ""
             for i in range(remainder):
-                message += f"{whole * count + i + 1})    title: {array[whole * count + i].get('title')}\n\r        \
-                    floor: {array[whole * count + i].get('floor')}\n\r        \
-                    rp_id: {array[whole * count + i].get('rp_id')}\n\r        \
-                    rp_ip: {array[whole * count + i].get('rp_ip')}\n\r        \
-                    switch: {array[whole * count + i].get('switch')}\n\r        \
-                    port: {array[whole * count + i].get('port')}\n\r        \
-                    date_income: {self.__format_date(array[whole * count + i].get('date_income'))}\
-                    \n\r\n\r"
+                message += f"{whole * count + i + 1})    title: {array[whole * count + i].get('title')}\n\r\
+        floor: {array[whole * count + i].get('floor')}\n\r\
+        rp_id: {array[whole * count + i].get('rp_id')}\n\r\
+        rp_ip: {array[whole * count + i].get('rp_ip')}\n\r\
+        switch: {array[whole * count + i].get('switch')}\n\r\
+        port: {array[whole * count + i].get('port')}\n\r\
+        date_income: {self.__format_date(array[whole * count + i].get('date_income'))}\n\r\n\r"
             message_array.append(message)
             return message_array
         else:

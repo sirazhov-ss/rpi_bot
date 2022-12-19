@@ -28,9 +28,9 @@ def get_config(config_directory):
     return config
 
 
-print (get_config(r'c:\mge.config'))
-print (get_config(r'c:\niac_brest.config'))
-print (get_config(r'c:\niac_tat.config'))
+print(get_config(r'c:\mge.config'))
+print(get_config(r'c:\niac_brest.config'))
+print(get_config(r'c:\niac_tat.config'))
 
 bot=telebot.TeleBot(open(r'c:\token'))
 

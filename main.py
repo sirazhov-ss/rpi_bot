@@ -3,7 +3,7 @@
 import telebot
 from telebot import types
 from os import path
-from CheckRPi.main import MongoConnect, PGConnect, CheckRpi
+from CheckRPi import MongoConnect, PGConnect, CheckRpi
 
 def get_config(config_directory):
     if not path.isfile(config_directory):

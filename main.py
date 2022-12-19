@@ -60,6 +60,5 @@ bot=telebot.TeleBot(open(r'c:\token'))
 #     for i in range(len(response)):
 #         bot.send_message(message.chat.id, response[i], parse_mode='html')
 #
-#
 # print ("bot.polling is active")
 bot.polling(none_stop=True)

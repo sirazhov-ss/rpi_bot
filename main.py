@@ -61,6 +61,7 @@ def make_subcribe(sample):
 
 def get_response(message, data, markup, subscribe=""):
     bot.delete_message(message.chat.id, message.message_id + 1)
+    bot.delete_message(message.chat.id, message.message_id + 2)
     response = CheckRpi(data).get_message(company=subscribe)
     if len(response) == 0:
         response = [f"Неработающих модулей{subscribe} не обнаружено!"]
@@ -98,6 +99,7 @@ def response(message):
         if message.text.strip().lower() == 'мгэ':
             company = " в МосГорЭкспертизе"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
+            bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
             config = get_config(MGE_DIR)
             data = MongoConnect(**config).data
             get_response(message, data, markup, company)
@@ -105,6 +107,7 @@ def response(message):
         if message.text.strip().lower() == 'ниац брестская':
             company = " в ГАУ 'НИАЦ' по адресу ул. 1-я Брестская д.27"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
+            bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
             config = get_config(NIAC_BREST_DIR)
             data = PGConnect(**config).data
             get_response(message, data, markup, company)
@@ -112,6 +115,7 @@ def response(message):
         if message.text.strip().lower() == 'ниац татарская':
             company = " в ГАУ 'НИАЦ' по адресу ул. Б.Татарская д.7 к.3"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
+            bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
             config = get_config(NIAC_TAT_DIR)
             data = PGConnect(**config).data
             get_response(message, data, markup, company)

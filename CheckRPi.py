@@ -225,9 +225,9 @@ class CheckRpi:
         weak = self.__sort_list(weak, 'switch', 'port')
         return weak
 
-    def get_message(self, subscribe=None):
+    def get_message(self, subscribe=None, company=""):
         if subscribe is None:
-            subscribe = "На данный момент обнаружен, неработающ, модул".split(',')
+            subscribe = f"На данный момент{company} обнаружен, неработающ, модул".split(',')
         array = self.get_weak()
         if len(array) > 0:
             message_array = []
@@ -235,9 +235,9 @@ class CheckRpi:
             whole = len(array) // count
             remainder = len(array) % count
             ending_remainder = remainder % 10
-            message = f"\n\r{subscribe[0] + self.__ending(ending_remainder)[0]} {whole * count + remainder}  \
-                {subscribe[1] + self.__ending(ending_remainder)[1]} \
-                {subscribe[2] + self.__ending(ending_remainder)[2]}:\n\r"
+            message = f"\n\r{subscribe[0] + self.__ending(ending_remainder)[0]} {whole * count + remainder} " \
+                      f"{subscribe[1] + self.__ending(ending_remainder)[1]} " \
+                      f"{subscribe[2] + self.__ending(ending_remainder)[2]}:\n\r"
             message_array.append(message)
             for i in range(whole):
                 message = ""

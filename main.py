@@ -82,20 +82,10 @@ if token[-1:] == '\n':
 bot = telebot.TeleBot(token)
 
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    response = f'<b>{"Нажмите на кнопки внизу, чтобы проверить интересующие Вас контуры!"}</b>'
-    markup = add_buttons('НИАЦ Брестская', 'НИАЦ Татарская', 'МГЭ', count=2)
-    bot.send_message(message.chat.id, response, parse_mode='html', reply_markup=markup)
-
-
 @bot.message_handler()
 def response(message):
     markup = add_buttons('НИАЦ Брестская', 'НИАЦ Татарская', 'МГЭ', count=2)
     try:
-        if message.text.strip().lower() == '/start':
-            return start(message)
-
         if message.text.strip().lower() == 'мгэ':
             company = " в МосГорЭкспертизе"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
@@ -104,7 +94,7 @@ def response(message):
             data = MongoConnect(**config).data
             get_response(message, data, markup, company)
 
-        if message.text.strip().lower() == 'ниац брестская':
+        elif message.text.strip().lower() == 'ниац брестская':
             company = " в ГАУ 'НИАЦ' по адресу ул. 1-я Брестская д.27"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
             bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
@@ -112,13 +102,17 @@ def response(message):
             data = PGConnect(**config).data
             get_response(message, data, markup, company)
 
-        if message.text.strip().lower() == 'ниац татарская':
+        elif message.text.strip().lower() == 'ниац татарская':
             company = " в ГАУ 'НИАЦ' по адресу ул. Б.Татарская д.7 к.3"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
             bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
             config = get_config(NIAC_TAT_DIR)
             data = PGConnect(**config).data
             get_response(message, data, markup, company)
+
+        else:
+            response = f'Нажмите на кнопки внизу, чтобы проверить интересующие Вас контуры!'
+            bot.send_message(message.chat.id, response, parse_mode='html', reply_markup=markup)
 
     except Exception as e:
         bot.send_message(message.chat.id, f'[ERROR] {e}', parse_mode='html', reply_markup=markup)

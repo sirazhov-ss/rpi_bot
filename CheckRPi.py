@@ -4,6 +4,7 @@ import abc
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 from ssh_pymongo import MongoSession
+from os import path
 from datetime import datetime
 
 
@@ -14,15 +15,44 @@ class IConnect(abc.ABC):
         '''Возвращает список всех пих'''
         pass
 
+    @classmethod
+    def get_config(cls, config_directory):
+        if not path.isfile(config_directory):
+            raise Exception(f"File not found! Check directory '{config_directory}'")
+        config = {
+            'remote_host': None,
+            'remote_port': None,
+            'remote_username': None,
+            'remote_password': None,
+            'db_host': None,
+            'db_port': None,
+            'db_name': None,
+            'db_username': None,
+            'db_password': None
+        }
+        with open(config_directory, 'r') as file:
+            for line in file.readlines():
+                for key in config.keys():
+                    if line.find(key) != -1:
+                        config[key] = line.split('=')[1].strip()
+
+        if config.get('remote_port') is not None:
+            config['remote_port'] = int(config['remote_port'])
+
+        if config.get('db_port') is not None:
+            config['db_port'] = int(config['db_port'])
+
+        return config
+
 
 class PGConnect(IConnect):
-    def __init__(self, **params):
+    def __init__(self, config_directory):
         self.__template = ('remote_host', 'remote_port', 'remote_username', 'remote_password',
                           'db_host', 'db_port', 'db_name', 'db_username', 'db_password')
+        self.__params = IConnect.get_config(config_directory)
         for key in range(len(self.__template)):
-            if not self.__template[key] in params:
+            if not self.__template[key] in self.__params:
                 raise Exception(f"Connection failed! Missing parameter: '{key}'")
-        self.__params = params
         self.data = self.get_data()
 
     def __get_fields(self, cursor, table_name):
@@ -89,13 +119,13 @@ class PGConnect(IConnect):
 
 
 class MongoConnect(IConnect):
-    def __init__(self, **params):
+    def __init__(self, config_directory):
         self.__template = ('remote_host', 'remote_port', 'remote_username', 'remote_password',
-                           'db_host', 'db_port', 'db_name', 'db_username', 'db_password')
+                          'db_host', 'db_port', 'db_name', 'db_username', 'db_password')
+        self.__params = IConnect.get_config(config_directory)
         for key in range(len(self.__template)):
-            if not self.__template[key] in params:
+            if not self.__template[key] in self.__params:
                 raise Exception(f"Connection failed! Missing parameter: '{key}'")
-        self.__params = params
         self.data = self.get_data()
 
     def __get_room(self, collection:dict) -> list:
@@ -162,8 +192,7 @@ class CheckRpi:
             self.__data = data
         else:
             raise TypeError(f'Object "connection" must be instance of class "list"!')
-        self.weak = self.get_weak()
-        self.message = self.get_message()
+        self.weak = []
 
     def __check_date(self) -> list:
         last_day = 1
@@ -218,22 +247,25 @@ class CheckRpi:
                     lst[i], lst[i + 1] = lst[i + 1], lst[i]
                 elif (current_element1 == previous_element1) and (current_element2 > previous_element2):
                     lst[i], lst[i + 1] = lst[i + 1], lst[i]
-
         return lst
 
-    def get_weak(self) -> list:
+    def get_weak(self, **kwargs) -> list:
         weak = list()
         date_range = self.__check_date()
+        j = 0
         for i in range(len(self.__data)):
             if date_range[0] >= self.__data[i].get('date_income') > date_range[1]:
                 weak.append(self.__data[i])
-        weak = self.__sort_list(weak, 'switch', 'port')
-        return weak
+                floor = str(weak[j].get('floor', None))
+                if floor is not None and len(kwargs) > 0:
+                    if floor in kwargs.keys():
+                        weak[j]['floor'] = kwargs.get(floor)
+                j += 1
+        self.weak = self.__sort_list(weak, 'switch', 'port')
+        return self.weak
 
-    def get_message(self, subscribe=None, company=""):
-        if subscribe is None:
-            subscribe = f"На данный момент{company} обнаружен, неработающ, модул".split(',')
-        array = self.get_weak()
+    def get_message(self, array, company=""):
+        subscribe = f"На данный момент{company} обнаружен, неработающ, модул".split(',')
         if len(array) > 0:
             message_array = []
             count = 20
@@ -274,5 +306,12 @@ class CheckRpi:
 
 
 if __name__ == '__main__':
-    pass
+    MGE_DIR = r'c:\mge.config'
+    NIAC_BREST_DIR = r'c:\niac_brest.config'
+    NIAC_TAT_DIR = r'c:\niac_tat.config'
+
+    mge = CheckRpi(MongoConnect(MGE_DIR).data)
+    res = mge.get_weak(**{'3': 9, '4': 8})
+    for i in range(len(res)):
+        print(res[i])
 

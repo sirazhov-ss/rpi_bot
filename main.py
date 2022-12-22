@@ -2,37 +2,7 @@
 
 import telebot
 from telebot import types
-from os import path
 from CheckRPi import MongoConnect, PGConnect, CheckRpi
-
-
-def get_config(config_directory):
-    if not path.isfile(config_directory):
-        raise Exception(f"File not found! Check directory '{config_directory}'")
-    config = {
-        'remote_host': None,
-        'remote_port': None,
-        'remote_username': None,
-        'remote_password': None,
-        'db_host': None,
-        'db_port': None,
-        'db_name': None,
-        'db_username': None,
-        'db_password': None
-        }
-    with open(config_directory, 'r') as file:
-        for line in file.readlines():
-            for key in config.keys():
-                if line.find(key) != -1:
-                    config[key] = line.split('=')[1].strip()
-
-    if config.get('remote_port') is not None:
-        config['remote_port'] = int(config['remote_port'])
-
-    if config.get('db_port') is not None:
-        config['db_port'] = int(config['db_port'])
-
-    return config
 
 
 def add_buttons(*args, count=2):
@@ -59,12 +29,11 @@ def make_subcribe(sample):
     return f"Получение списка неработающих модулей{sample}. Ждите..."
 
 
-def get_response(message, data, markup, subscribe=""):
+def get_response(message, response, markup, company=""):
     bot.delete_message(message.chat.id, message.message_id + 1)
     bot.delete_message(message.chat.id, message.message_id + 2)
-    response = CheckRpi(data).get_message(company=subscribe)
     if len(response) == 0:
-        response = [f"Неработающих модулей{subscribe} не обнаружено!"]
+        response = [f"Неработающих модулей{company} не обнаружено!"]
     for i in range(len(response)):
         bot.send_message(message.chat.id, response[i], parse_mode='html', reply_markup=markup)
 
@@ -90,25 +59,23 @@ def response(message):
             company = " в МосГорЭкспертизе"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
             bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
-            config = get_config(MGE_DIR)
-            data = MongoConnect(**config).data
-            get_response(message, data, markup, company)
+            mge = CheckRpi(MongoConnect(MGE_DIR).data)
+            get_response(message, mge.get_message(mge.get_weak(), company), markup, company)
 
         elif message.text.strip().lower() == 'ниац брестская':
             company = " в ГАУ 'НИАЦ' по адресу ул. 1-я Брестская д.27"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
             bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
-            config = get_config(NIAC_BREST_DIR)
-            data = PGConnect(**config).data
-            get_response(message, data, markup, company)
+            niac_brest = CheckRpi(PGConnect(NIAC_BREST_DIR).data)
+            get_response(message, niac_brest.get_message(niac_brest.get_weak(), company), markup, company)
 
         elif message.text.strip().lower() == 'ниац татарская':
             company = " в ГАУ 'НИАЦ' по адресу ул. Б.Татарская д.7 к.3"
             bot.send_sticker(message.chat.id, open(STICKER_DIR, 'rb'), reply_markup=markup)
             bot.send_message(message.chat.id, make_subcribe(company), parse_mode='html', reply_markup=markup)
-            config = get_config(NIAC_TAT_DIR)
-            data = PGConnect(**config).data
-            get_response(message, data, markup, company)
+            niac_tat = CheckRpi(PGConnect(NIAC_TAT_DIR).data)
+            get_response(message, niac_tat.get_message(niac_tat.get_weak(**{'6': 1, '7': 2, '8': 0}), company),
+                         markup, company)
 
         else:
             response = f'Нажмите на кнопки внизу, чтобы проверить интересующие Вас контуры!'

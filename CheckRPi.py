@@ -14,6 +14,7 @@ class IConnect(abc.ABC):
         '''Возвращает список всех пих'''
         pass
 
+
 class PGConnect(IConnect):
     def __init__(self, **params):
         self.__template = ('remote_host', 'remote_port', 'remote_username', 'remote_password',
@@ -51,6 +52,10 @@ class PGConnect(IConnect):
                     floor = room[j].get('floor', None)
                     title = room[j].get('title', 'unknown')
                     break
+            if floor is None:
+                floor = 'unknown'
+            if title is None:
+                title = 'unknown'
             data.append({
                 'floor': floor,
                 'title': title,
@@ -150,6 +155,7 @@ class MongoConnect(IConnect):
         session.stop()
         return data
 
+
 class CheckRpi:
     def __init__(self, data):
         if isinstance(data, list):
@@ -214,7 +220,6 @@ class CheckRpi:
                     lst[i], lst[i + 1] = lst[i + 1], lst[i]
 
         return lst
-
 
     def get_weak(self) -> list:
         weak = list()

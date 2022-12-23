@@ -40,7 +40,7 @@ def get_message(array, company=""):
         whole = len(array) // count
         remainder = len(array) % count
         ending_remainder = remainder % 10
-        message = f"\n\r{subscribe[0] + __ending(ending_remainder)[0]} {whole * count + remainder}" \
+        message = f"\n\r{subscribe[0] + __ending(ending_remainder)[0]} <b>{whole * count + remainder}</b>" \
                     f"{subscribe[1] + __ending(ending_remainder)[1]} " \
                     f"{subscribe[2] + __ending(ending_remainder)[2]}:\n\r"
         message_array.append(message)
@@ -133,7 +133,7 @@ def response(message):
                        __change_first_element(niac_brest_message, 'ГАУ \'НИАЦ\' ул.1-я Брестская, д.27') + \
                        __change_first_element(niac_tat_message, 'ГАУ \'НИАЦ\' ул.Б.Татарская, д.7, к.3')
             if count > 0:
-                header = f'За последние сутки на всех контурах обнаружен{__ending(count % 10)[0]} {count} ' \
+                header = f'За последние сутки на всех контурах обнаружен{__ending(count % 10)[0]} <b>{count}</b> ' \
                          f'неработающ{__ending(count % 10)[1]} модул{__ending(count % 10)[2]}:'
                 response.reverse()
                 response.append(header)

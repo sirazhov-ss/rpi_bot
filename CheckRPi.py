@@ -5,7 +5,7 @@ import psycopg2
 from sshtunnel import SSHTunnelForwarder
 from ssh_pymongo import MongoSession
 from os import path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class IConnect(abc.ABC):
@@ -192,42 +192,7 @@ class CheckRpi:
             self.__data = data
         else:
             raise TypeError(f'Object "connection" must be instance of class "list"!')
-        self.weak = []
-
-    def __check_date(self) -> list:
-        last_day = 1
-        last_month = 1
-        last_year = 2021
-        date = datetime.fromtimestamp(round(datetime.timestamp(datetime.now()), 0)
-                                      ).strftime("%Y,%m,%d,%H,%M").split(",")
-        year = int(date[0])
-        month = int(date[1])
-        day = int(date[2])
-        hour = int(date[3])
-        minute = int(date[4])
-        if (minute - 2) < 0:
-            minute = 0
-            if (hour - 1) < 0:
-                hour = 0
-            else:
-                hour -= 1
-        else:
-            minute -= 2
-
-        date_range = [datetime(year, month, day, hour, minute), datetime(last_year, last_month, last_day, 0, 0)]
-        return date_range
-
-    def __format_date(self, x):
-        return datetime.strftime(datetime.fromtimestamp(round(datetime.timestamp(x), 0)), "%d/%m/%y %H:%M:%S")
-
-    def __ending(self, remainder):
-        if remainder == 1:
-            ending_array = ["", "ий", "ь"]
-        elif (remainder > 1) and (remainder <= 3):
-            ending_array = ["о", "их", "я"]
-        else:
-            ending_array = ["о", "их", "ей"]
-        return ending_array
+        self.weak = self.get_weak()
 
     def __str_to_digit(self, var):
         if not isinstance(var, str) or not var.isdigit():
@@ -236,7 +201,7 @@ class CheckRpi:
             digit = int(var.replace('.', ''))
             return digit
 
-    def __sort_list(self, lst:list, key1='', key2='') -> list:
+    def __sort_list(self, lst: list, key1='', key2='') -> list:
         for cnt in range(len(lst)-1, 0, -1):
             for i in range(cnt):
                 current_element1 = self.__str_to_digit(lst[i].get(key1, 0))
@@ -249,57 +214,20 @@ class CheckRpi:
                     lst[i], lst[i + 1] = lst[i + 1], lst[i]
         return lst
 
-    def get_weak(self, **kwargs) -> list:
-        weak = list()
-        date_range = self.__check_date()
+    def get_weak(self, days=365, sort_1='date_income', sort_2='', **kwargs) -> list:
+        date = datetime.now() - timedelta(minutes=3)
+        date_range = [date, date - timedelta(days=days)]
+        self.weak = []
         j = 0
         for i in range(len(self.__data)):
             if date_range[0] >= self.__data[i].get('date_income') > date_range[1]:
-                weak.append(self.__data[i])
-                floor = str(weak[j].get('floor', None))
+                self.weak.append(self.__data[i])
+                floor = str(self.weak[j].get('floor', None))
                 if floor is not None and len(kwargs) > 0:
                     if floor in kwargs.keys():
-                        weak[j]['floor'] = kwargs.get(floor)
+                        self.weak[j]['floor'] = kwargs.get(floor)
                 j += 1
-        self.weak = self.__sort_list(weak, 'switch', 'port')
-        return self.weak
-
-    def get_message(self, array, company=""):
-        subscribe = f"На данный момент{company} обнаружен, неработающ, модул".split(',')
-        if len(array) > 0:
-            message_array = []
-            count = 20
-            whole = len(array) // count
-            remainder = len(array) % count
-            ending_remainder = remainder % 10
-            message = f"\n\r{subscribe[0] + self.__ending(ending_remainder)[0]} {whole * count + remainder} " \
-                      f"{subscribe[1] + self.__ending(ending_remainder)[1]} " \
-                      f"{subscribe[2] + self.__ending(ending_remainder)[2]}:\n\r"
-            message_array.append(message)
-            for i in range(whole):
-                message = ""
-                for j in range(count):
-                    message += f"{i * count + j + 1})    title: {array[i * count + j].get('title')}\n\r\
-        floor: {array[i * count + j].get('floor')}\n\r\
-        rp_id: {array[i * count + j].get('rp_id')}\n\r\
-        rp_ip: {array[i * count + j].get('rp_ip')}\n\r\
-        switch: {array[i * count + j].get('switch')}\n\r\
-        port: {array[i * count + j].get('port')}\n\r\
-        date_income: {self.__format_date(array[i * count + j].get('date_income'))}\n\r\n\r"
-                message_array.append(message)
-            message = ""
-            for i in range(remainder):
-                message += f"{whole * count + i + 1})    title: {array[whole * count + i].get('title')}\n\r\
-        floor: {array[whole * count + i].get('floor')}\n\r\
-        rp_id: {array[whole * count + i].get('rp_id')}\n\r\
-        rp_ip: {array[whole * count + i].get('rp_ip')}\n\r\
-        switch: {array[whole * count + i].get('switch')}\n\r\
-        port: {array[whole * count + i].get('port')}\n\r\
-        date_income: {self.__format_date(array[whole * count + i].get('date_income'))}\n\r\n\r"
-            message_array.append(message)
-            return message_array
-        else:
-            return []
+        return self.__sort_list(self.weak, sort_1, sort_2)
 
     def __repr__(self):
         return f'{self.__data}'
@@ -311,7 +239,8 @@ if __name__ == '__main__':
     NIAC_TAT_DIR = r'c:\niac_tat.config'
 
     mge = CheckRpi(MongoConnect(MGE_DIR).data)
-    res = mge.get_weak(**{'3': 9, '4': 8})
+#    res = mge.get_weak(**{'3': 9, '4': 8}, days=30)
+    res = mge.get_weak(sort_1='switch', sort_2='port')
     for i in range(len(res)):
         print(res[i])
 

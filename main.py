@@ -5,7 +5,7 @@ from telebot import types
 from CheckRPi import MongoConnect, PGConnect, CheckRpi
 from datetime import datetime
 
-
+#comment
 def __make_subcribe(sample):
     return f"Получение списка неработающих модулей{sample}. Ждите..."
 

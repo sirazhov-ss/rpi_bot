@@ -128,7 +128,7 @@ class MongoConnect(IConnect):
                 raise Exception(f"Connection failed! Missing parameter: '{key}'")
         self.data = self.get_data()
 
-    def __get_room(self, collection:dict) -> list:
+    def __get_room(self, collection: dict) -> list:
         room = list()
         floor = None
         for document in collection:
